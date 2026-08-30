@@ -18,6 +18,6 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git remote add gitlab git@gitlab.com:${{ secrets.GITLAB_USERNAME }}/workup-pci-dss-saq-a-ep.git
+          git remote add gitlab git@gitlab.com:${{ secrets.GITLAB_USERNAME }}/on-prem-workup-pci-dss.git
           git push gitlab --all
           git push gitlab --tags
