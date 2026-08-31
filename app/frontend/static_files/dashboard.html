@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Board — WorkUp</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <div class="nav-logo-mark"></div>
+      WorkUp
+    </a>
+    <div class="nav-links">
+      <a href="dashboard.html">Board</a>
+      <a href="billing.html">Billing</a>
+    </div>
+    <div class="nav-actions">
+      <button id="logout-btn" class="btn btn-ghost">Log out</button>
+    </div>
+  </nav>
+
+  <div class="board-header">
+    <div><strong>Acme Web Platform</strong> <span style="color: var(--text-muted);">/ Board</span></div>
+  </div>
+
+  <div class="board">
+    <div class="column">
+      <div class="column-title">Backlog <span class="count">3</span></div>
+      <div class="task-card">API rate limiting middleware
+        <div class="task-meta"><span>API · #2105</span><span>May 18</span></div>
+      </div>
+      <div class="task-card">Refactor auth flow
+        <div class="task-meta"><span>SDK · #2101</span><span>May 16</span></div>
+      </div>
+      <div class="task-card">Add org-level roles
+        <div class="task-meta"><span>Auth · #2098</span><span>May 15</span></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="column-title">In Progress <span class="count">2</span></div>
+      <div class="task-card">Improve dashboard loading state
+        <div class="task-meta"><span>Web · #2110</span><span>May 20</span></div>
+      </div>
+      <div class="task-card">Fix race condition in job scheduler
+        <div class="task-meta"><span>Infra · #2107</span><span>May 19</span></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="column-title">In Review <span class="count">1</span></div>
+      <div class="task-card">User settings permissions
+        <div class="task-meta"><span>Web · #2104</span><span>May 17</span></div>
+      </div>
+    </div>
+    <div class="column">
+      <div class="column-title">Done <span class="count">2</span></div>
+      <div class="task-card">Initial project setup
+        <div class="task-meta"><span>Infra · #2095</span><span>May 13</span></div>
+      </div>
+      <div class="task-card">CI pipeline for PRs
+        <div class="task-meta"><span>Infra · #2094</span><span>May 12</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    // Exchanges the ?code=... from Cognito on first load, or confirms
+    // an existing session on repeat visits. Bounces to login if neither.
+    (async () => {
+      const session = await Auth.handleRedirect();
+      if (!session) window.location.href = "login.html";
+    })();
+  </script>
+</body>
+</html>

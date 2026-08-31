@@ -1,0 +1,24 @@
+services:
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: workup-tunnel
+    restart: unless-stopped
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TOKEN}
+    command: >
+      tunnel --no-autoupdate run
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:alpine
+    container_name: workup-nginx
+    restart: unless-stopped
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./static_files:/usr/share/nginx/html:ro
+    
+
+  
