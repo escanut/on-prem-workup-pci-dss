@@ -1,6 +1,5 @@
 services:
 
-
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: workup-tunnel
