@@ -2,10 +2,10 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: workup-tunnel
+    container_name: workup-frontend-tunnel
     restart: unless-stopped
     environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TOKEN}
+      TUNNEL_TOKEN: ${FRONTEND_CLOUDFLARE_TOKEN}
     command: >
       tunnel --no-autoupdate run
     depends_on:
