@@ -1,10 +1,3 @@
-// ── WorkUp billing (Stripe Embedded Checkout) ───────────────────────
-// One subscription tier, one price ID, no plan-picker logic needed.
-// The "popup" is Stripe's Embedded Checkout mounted inside a modal
-// that overlays the page — the customer never leaves workup.com and
-// card data never touches our frontend or backend, only Stripe's
-// hosted iframe. This is what keeps the project inside SAQ A-EP scope.
-
 document.addEventListener("DOMContentLoaded", () => {
   const session = Auth.requireAuth();
   if (!session) return;
@@ -21,8 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.classList.add("open");
     document.body.style.overflow = "hidden";
 
-    // Backend creates the Checkout Session (ui_mode: "embedded") and
-    // returns its client_secret. See WRITEUP.md for the FastAPI route.
     const fetchClientSecret = async () => {
       const res = await fetch(`${CONFIG.api.baseUrl}/billing/create-checkout-session`, {
         method: "POST",
@@ -33,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!res.ok) throw new Error("Could not start checkout");
       const data = await res.json();
-      return data.client_secret;
+      return data.clientSecret;
     };
 
     embeddedCheckout = await stripe.initEmbeddedCheckout({ fetchClientSecret });

@@ -10,11 +10,11 @@ const CONFIG = {
 
   // Stripe
   stripe: {
-    publishableKey: "pk_test_REPLACE_WITH_PUBLISHABLE_KEY", // safe to expose client-side
+    publishableKey: "pk_test_51R6GJCEFe2s2FXuqhskQXTkGhFufwTvm2Jdf6DQMWVbrZ9cmG4zd4JQxLEjsKX4skbCQhkbxl1nsBcN1AOvFGlNA00zGeuqV9j", // safe to expose client-side
   },
 
   // FastAPI backend (api.workup.com per the architecture doc)
   api: {
-    baseUrl: "https://api.workup.com",
+    baseUrl: "https://api.victorojeje.xyz",
   },
 };
