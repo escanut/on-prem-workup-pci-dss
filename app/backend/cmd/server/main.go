@@ -11,6 +11,7 @@ import (
 	"workup-backend/internal/billing"
 	"workup-backend/internal/config"
 	applog "workup-backend/internal/logger"
+	"workup-backend/internal/metrics"
 
 	dbpkg "workup-backend/internal/db"
 )
@@ -62,6 +63,9 @@ func main() {
 		c.Next()
 	})
 
+	router.Use(metrics.Middleware())
+
+	router.GET("/metrics", metrics.Handler())
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})

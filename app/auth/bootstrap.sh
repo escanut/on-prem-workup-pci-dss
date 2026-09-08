@@ -8,14 +8,26 @@ if [ -f .env ]; then
 fi
 
 KEYCLOAK_URL="http://localhost:8080"
+AUTH_URL="https://auth.victorojeje.xyz"
+
+
 FRONTEND_URL="https://www.victorojeje.xyz"
 SECONDARY_URL="https://victorojeje.xyz"
+
+
+GRAFANA_CLIENT_ID="grafana"
+GRAFANA_URL="https://grafana.victorojeje.xyz"
+
+
+CLOUDFLARE_TEAM_NAME="${CLOUDFLARE_TEAM_NAME:?CLOUDFLARE_TEAM_NAME not set}"
+CLOUDFLARE_CALLBACK="https://${CLOUDFLARE_TEAM_NAME}.cloudflareaccess.com/cdn-cgi/access/callback"
 
 ADMIN_USER="admin"
 ADMIN_PASS="${KC_ADMIN_PASSWORD:?KC_ADMIN_PASSWORD not set}"
 
 REALM_NAME="workup"
 CLIENT_ID="workup-frontend"
+CF_CLIENT_ID="cloudflare-access"          
 
 echo "Waiting for Keycloak to be ready..."
 until curl -sf "${KEYCLOAK_URL}/realms/master" >/dev/null 2>&1; do
@@ -103,8 +115,44 @@ else
   fi
 fi
 
+
 # --------------------------------------------------------------------
-# Client
+# User events
+# --------------------------------------------------------------------
+
+echo "Enabling user events on realm: ${REALM_NAME}..."
+
+EVENTS_STATUS=$(curl -s -o /tmp/events_update.json -w "%{http_code}" -X PUT \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"eventsEnabled\": true,
+    \"eventsExpiration\": 2592000,
+    \"enabledEventTypes\": [
+      \"LOGIN\",
+      \"LOGIN_ERROR\",
+      \"LOGOUT\",
+      \"REGISTER\",
+      \"REGISTER_ERROR\",
+      \"CODE_TO_TOKEN\",
+      \"REFRESH_TOKEN\",
+      \"REFRESH_TOKEN_ERROR\"
+    ]
+  }")
+
+if [ "${EVENTS_STATUS}" = "204" ]; then
+  echo "User events enabled."
+else
+  echo "Failed to enable user events (HTTP ${EVENTS_STATUS}):"
+  cat /tmp/events_update.json
+fi
+
+rm -f /tmp/events_update.json
+
+
+# --------------------------------------------------------------------
+# Frontend Client (public)
 # --------------------------------------------------------------------
 
 echo "Checking for client: ${CLIENT_ID}..."
@@ -153,18 +201,153 @@ else
   fi
 fi
 
+
+# --------------------------------------------------------------------
+# Grafana Client (confidential)
+# --------------------------------------------------------------------
+
+echo "Checking for client: ${GRAFANA_CLIENT_ID}..."
+
+EXISTING_GRAFANA_CLIENT=$(curl -sf \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients?clientId=${GRAFANA_CLIENT_ID}" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r 'length')
+
+if [ "${EXISTING_GRAFANA_CLIENT}" != "0" ]; then
+  echo "Grafana client already exists. Skipping creation."
+else
+  echo "Creating Grafana client: ${GRAFANA_CLIENT_ID}..."
+
+  CREATE_STATUS=$(curl -s -o /tmp/grafana_client_create.json -w "%{http_code}" -X POST \
+    "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"clientId\": \"${GRAFANA_CLIENT_ID}\",
+      \"name\": \"Grafana\",
+      \"description\": \"OIDC client for Grafana SSO\",
+      \"enabled\": true,
+      \"publicClient\": false,
+      \"secret\": \"${GF_CLIENT_SECRET}\",
+      \"baseUrl\": \"${GRAFANA_URL}\",
+      \"redirectUris\": [
+        \"${GRAFANA_URL}/login/generic_oauth\"
+      ],
+      \"webOrigins\": [
+        \"${GRAFANA_URL}\"
+      ],
+      \"standardFlowEnabled\": true,
+      \"implicitFlowEnabled\": false,
+      \"directAccessGrantsEnabled\": false,
+      \"serviceAccountsEnabled\": false
+    }")
+
+  if [ "${CREATE_STATUS}" = "201" ]; then
+    echo "Grafana client created."
+  else
+    echo "Grafana client creation failed (HTTP ${CREATE_STATUS}):"
+    cat /tmp/grafana_client_create.json
+    exit 1
+  fi
+fi
+
+# --------------------------------------------------------------------
+# Cloudflare Access Client (confidential)
+# --------------------------------------------------------------------
+
+echo "Checking for client: ${CF_CLIENT_ID}..."
+
+EXISTING_CF_CLIENT=$(curl -sf \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients?clientId=${CF_CLIENT_ID}" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r 'length')
+
+if [ "${EXISTING_CF_CLIENT}" != "0" ]; then
+  echo "Cloudflare Access client already exists. Skipping creation."
+else
+  echo "Creating Cloudflare Access client: ${CF_CLIENT_ID}..."
+
+  CREATE_STATUS=$(curl -s -o /tmp/cf_client_create.json -w "%{http_code}" -X POST \
+    "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"clientId\": \"${CF_CLIENT_ID}\",
+      \"name\": \"Cloudflare Access\",
+      \"description\": \"OIDC client for Cloudflare Zero Trust / Access\",
+      \"enabled\": true,
+      \"publicClient\": false,
+      \"secret\": \"${CF_CLIENT_SECRET}\",
+      \"redirectUris\": [
+        \"${CLOUDFLARE_CALLBACK}\"
+      ],
+      \"webOrigins\": [
+        \"https://${CLOUDFLARE_TEAM_NAME}.cloudflareaccess.com\"
+      ],
+      \"standardFlowEnabled\": true,
+      \"implicitFlowEnabled\": false,
+      \"directAccessGrantsEnabled\": false,
+      \"serviceAccountsEnabled\": false
+    }")
+
+  if [ "${CREATE_STATUS}" = "201" ]; then
+    echo "Cloudflare Access client created."
+  else
+    echo "Cloudflare Access client creation failed (HTTP ${CREATE_STATUS}):"
+    cat /tmp/cf_client_create.json
+    exit 1
+  fi
+fi
+
+# --------------------------------------------------------------------
+# Always print the Cloudflare client secret (even if client already existed)
+# --------------------------------------------------------------------
+
+echo
+echo "Fetching Cloudflare Access client secret..."
+
+CF_CLIENT_UUID=$(curl -sf \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients?clientId=${CF_CLIENT_ID}" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r '.[0].id')
+
+CF_CLIENT_SECRET=$(curl -sf \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/clients/${CF_CLIENT_UUID}/client-secret" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" | jq -r '.value')
+
 rm -f \
   /tmp/realm_create.json \
   /tmp/realm_update.json \
-  /tmp/client_create.json
+  /tmp/client_create.json \
+  /tmp/cf_client_create.json
+
 
 echo
-echo "Bootstrap complete."
+echo "============================================================"
+echo " Bootstrap complete"
+echo "============================================================"
 echo
 echo "OIDC discovery URL:"
 echo "  ${KEYCLOAK_URL}/realms/${REALM_NAME}/.well-known/openid-configuration"
 echo
 echo "Frontend config:"
-echo "  KEYCLOAK_URL: '${KEYCLOAK_URL}'"
-echo "  REALM: '${REALM_NAME}'"
-echo "  CLIENT_ID: '${CLIENT_ID}'"
+echo "  KEYCLOAK_URL : ${KEYCLOAK_URL}"
+echo "  REALM        : ${REALM_NAME}"
+echo "  CLIENT_ID    : ${CLIENT_ID}"
+echo
+echo "Cloudflare Access (use these values in Zero Trust → Identity providers → OpenID Connect):"
+echo "  Client ID     : ${CF_CLIENT_ID}"
+echo "  Client Secret : ${CF_CLIENT_SECRET}"
+echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
+echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
+echo "  Certs URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/certs"
+echo
+echo "Redirect URI used : ${CLOUDFLARE_CALLBACK}"
+echo "============================================================"
+
+
+echo
+echo "Grafana SSO (use these values in Grafana env / grafana.ini):"
+echo "  Client ID     : ${GRAFANA_CLIENT_ID}"
+echo "  Client Secret : ${GF_CLIENT_SECRET}"
+echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
+echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
+echo "  API URL       : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/userinfo"
+echo "  Redirect URI  : ${GRAFANA_URL}/login/generic_oauth"

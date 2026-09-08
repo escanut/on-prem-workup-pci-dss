@@ -12,7 +12,7 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.2
     container_name: workup-keycloak
-    command: start-dev
+    command: start
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -24,6 +24,9 @@ services:
       KC_PROXY_HEADERS: xforwarded
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KC_METRICS_ENABLED: "true"
+      KC_EVENT_METRICS_USER_ENABLED: "true"
+      KC_EVENT_METRICS_USER_EVENTS: "login,logout,register,code_to_token,refresh_token" 
     ports:
       - "8080:8080"
     depends_on:
@@ -50,6 +53,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  alloy:
+      image: grafana/alloy:latest
+      container_name: workup-auth-alloy
+      restart: unless-stopped
+      volumes:
+        - ./alloy-config.river:/etc/alloy/config.alloy:ro
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      command: run /etc/alloy/config.alloy
+      environment:
+        CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID}
+        CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET}
+      depends_on:
+        - keycloak
 
 volumes:
   postgres-data:

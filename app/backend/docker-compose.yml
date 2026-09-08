@@ -38,7 +38,6 @@ services:
       postgres:
         condition: service_healthy
 
-
   postgres:
     image: postgres:18-alpine
     container_name: workup-api-db
@@ -55,6 +54,21 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  alloy:
+      image: grafana/alloy:latest
+      container_name: workup-api-alloy
+      restart: unless-stopped
+      volumes:
+        - ./alloy-config.river:/etc/alloy/config.alloy:ro
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      command: run /etc/alloy/config.alloy
+      environment:
+        CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID}
+        CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET}
+      depends_on:
+        - api
 
 volumes:
   postgres-data:

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"workup-backend/internal/metrics"
+
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/MicahParks/keyfunc/v3"
@@ -38,6 +40,7 @@ func RequireAuth(cfg *config.Config, log zerolog.Logger) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Missing or malformed Authorization header",
 			})
+			metrics.RecordAuthRejection("missing_header")
 			return
 		}
 
@@ -61,6 +64,7 @@ func RequireAuth(cfg *config.Config, log zerolog.Logger) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Invalid or expired token",
 			})
+			metrics.RecordAuthRejection("invalid_token")
 			return
 		}
 
@@ -70,6 +74,7 @@ func RequireAuth(cfg *config.Config, log zerolog.Logger) gin.HandlerFunc {
 				"error": "Invalid token claims",
 			})
 			return
+			metrics.RecordAuthRejection("invalid_token claims")
 		}
 
 		c.Set("userSub", claims["sub"])
