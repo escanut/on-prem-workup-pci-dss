@@ -9,6 +9,8 @@ variable "proxmox_api_token" {
   sensitive   = true
 }
 
+
+
 variable "proxmox_insecure" {
   description = "Skip TLS verification (self-signed certs)"
   type        = bool
@@ -27,11 +29,7 @@ variable "datastore_id" {
   default     = "local-lvm"
 }
 
-variable "vm_name" {
-  description = "Name of the VM"
-  type        = string
-  default     = "ubuntu-test"
-}
+
 
 variable "vm_id" {
   description = "VMID to use (leave null for auto)"
@@ -39,14 +37,12 @@ variable "vm_id" {
   default     = null
 }
 
-variable "ip_config" {
-  description = "Static IP configuration"
-  type = object({
-    address = string   # e.g. "192.168.1.50/24"
-    gateway = string   # e.g. "192.168.1.1"
-  })
-  default = null
+variable "template_id" {
+  description = "Proxmox template id"
+  type = string
+  
 }
+
 
 variable "ssh_private_key" {
   description = "Static IP configuration"
