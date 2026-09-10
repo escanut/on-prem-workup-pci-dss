@@ -15,7 +15,7 @@ default:
 variables:
   BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
 
-build-:
+build-backend:
   stage: build
   script:
     - echo "Building backend image..."
