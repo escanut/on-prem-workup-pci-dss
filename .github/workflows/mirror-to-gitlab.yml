@@ -20,17 +20,12 @@ jobs:
 
       - name: Push to GitLab without .github
         run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
           git remote add gitlab git@gitlab.com:${{ secrets.GITLAB_USERNAME }}/on-prem-workup-pci-dss.git
-
-          # Create a temporary branch that does not contain .github
           git checkout -b mirror-temp
-          git rm -r --cached .github || true
-          git commit -m "temp: remove .github for GitLab mirror" --allow-empty || true
-
-          # Force-push this cleaned tree to GitLab
+          git rm -r .github
+          git commit -m "temp: remove .github for GitLab mirror"
           git push gitlab mirror-temp:main --force
-          # (you can also push other branches the same way if needed)
-
-          # Clean up
           git checkout main
           git branch -D mirror-temp
