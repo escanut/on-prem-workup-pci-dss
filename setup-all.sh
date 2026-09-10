@@ -43,3 +43,9 @@ cd ${PROJECT_PATH}/infra/terraform
 
 terraform apply --auto-approve
 
+
+# ANSIBLE SETUP
+
+cd ${PROJECT_PATH}/infra/ansible
+
+ansible-playbook playbooks/frontend.yml

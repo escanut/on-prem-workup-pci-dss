@@ -1,0 +1,12 @@
+---
+- name: Frontend - basic connectivity test
+  hosts: frontend
+  gather_facts: true
+
+  tasks:
+    - name: Ping the host
+      ansible.builtin.ping:
+
+    - name: Show hostname and IP
+      ansible.builtin.debug:
+        msg: "Hostname: {{ ansible_facts[ 'hostname' ] }} | IP: {{ ansible_facts['default_ipv4']['address'] }}"

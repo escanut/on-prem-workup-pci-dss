@@ -1,6 +1,8 @@
 # .github/workflows/mirror-to-gitlab.yml
 name: Mirror to GitLab
+
 on: [push]
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
@@ -16,8 +18,19 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan gitlab.com >> ~/.ssh/known_hosts
 
-      - name: Push to GitLab
+      - name: Push to GitLab without .github
         run: |
           git remote add gitlab git@gitlab.com:${{ secrets.GITLAB_USERNAME }}/on-prem-workup-pci-dss.git
-          git push gitlab --all --force
-          git push gitlab --tags --force
+
+          # Create a temporary branch that does not contain .github
+          git checkout -b mirror-temp
+          git rm -r --cached .github || true
+          git commit -m "temp: remove .github for GitLab mirror" --allow-empty || true
+
+          # Force-push this cleaned tree to GitLab
+          git push gitlab mirror-temp:main --force
+          # (you can also push other branches the same way if needed)
+
+          # Clean up
+          git checkout main
+          git branch -D mirror-temp
