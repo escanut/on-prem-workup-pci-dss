@@ -3,6 +3,7 @@
 stages:
   - build
 
+
 default:
   image: docker:27
   services:
