@@ -55,10 +55,21 @@
         mode: "0600"
       no_log: true
 
-    - name: Clear stale GitLab known_hosts entry
-      ansible.builtin.shell: ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "gitlab.com"
+    - name: Ensure known_hosts file exists
+      ansible.builtin.file:
+        path: /home/ubuntu/.ssh/known_hosts
+        state: touch
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
       become: false
-      ignore_errors: true
+
+    - name: Clear stale GitLab known_hosts entry
+      ansible.builtin.command:
+        cmd: ssh-keygen -f /home/ubuntu/.ssh/known_hosts -R gitlab.com
+      become: false
+      changed_when: false
+      failed_when: false
 
     - name: Check if repo already initialized
       ansible.builtin.stat:
@@ -109,6 +120,8 @@
       ansible.builtin.template:
         src: "{{ playbook_dir }}/templates/backend.env.j2"
         dest: "{{ backend_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
         mode: "0600"
       no_log: true
 
@@ -119,7 +132,7 @@
         password: "{{ gitlab_registry_password }}"
       no_log: true
 
-    - name: Pull images / build
+    - name: Pull images 
       community.docker.docker_compose_v2:
         project_src: "{{ backend_dir }}"
         pull: always
