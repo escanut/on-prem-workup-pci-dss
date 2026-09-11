@@ -6,3 +6,5 @@ terraform.tfvars
 ./terraform*
 .env
 *.img
+infra/ansible/group_vars/*
+infra/ansible/vars/*

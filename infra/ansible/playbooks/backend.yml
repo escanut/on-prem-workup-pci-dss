@@ -1,17 +1,16 @@
 ---
-- name: Frontend - deploy nginx and cloudflared tunnel
-  hosts: frontend
+- name: Backend - deploy Go API + Postgres + cloudflared tunnel
+  hosts: backend
   gather_facts: true
 
   vars_files:
     - ../vars/secrets.yml
-    
+
   vars:
-    deploy_dir: /opt/workup-frontend
+    deploy_dir: /opt/workup-backend
     repo_url: "git@gitlab.com:ojejevictor/on-prem-workup-pci-dss.git"
-    frontend_dir: "{{ deploy_dir }}/app/frontend"
- 
-  
+    backend_dir: "{{ deploy_dir }}/app/backend"
+
   tasks:
     - name: Ping the host
       ansible.builtin.ping:
@@ -41,7 +40,7 @@
         mode: "0755"
 
     - name: Ensure .ssh directory exists on VM
-      file:
+      ansible.builtin.file:
         path: /home/ubuntu/.ssh
         state: directory
         owner: ubuntu
@@ -49,7 +48,7 @@
         mode: "0700"
 
     - name: Push deploy private key to VM
-      copy:
+      ansible.builtin.copy:
         content: "{{ deploy_private_key }}"
         dest: /home/ubuntu/.ssh/workup_repo_key
         owner: ubuntu
@@ -57,10 +56,10 @@
       no_log: true
 
     - name: Clear stale GitLab known_hosts entry
-      shell: ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "gitlab.com"
+      ansible.builtin.shell: ssh-keygen -f "/home/ubuntu/.ssh/known_hosts" -R "gitlab.com"
       become: false
       ignore_errors: true
-    
+
     - name: Check if repo already initialized
       ansible.builtin.stat:
         path: "{{ deploy_dir }}/.git"
@@ -75,20 +74,20 @@
           ansible.builtin.command:
             cmd: git init
             chdir: "{{ deploy_dir }}"
- 
+
         - name: Add GitLab remote
           ansible.builtin.command:
             cmd: git remote add origin {{ repo_url }}
             chdir: "{{ deploy_dir }}"
- 
+
         - name: Enable sparse-checkout (cone mode)
           ansible.builtin.command:
             cmd: git sparse-checkout init --cone
             chdir: "{{ deploy_dir }}"
- 
-        - name: Restrict sparse-checkout to app/frontend only
+
+        - name: Restrict sparse-checkout to app/backend only
           ansible.builtin.command:
-            cmd: git sparse-checkout set app/frontend
+            cmd: git sparse-checkout set app/backend
             chdir: "{{ deploy_dir }}"
 
     - name: Ensure correct remote URL
@@ -98,7 +97,7 @@
       become: false
       changed_when: false
 
-    - name: Fetch and reset to latest main (only downloads app/frontend blobs)
+    - name: Fetch and reset to latest main (only downloads app/backend blobs)
       ansible.builtin.shell: |
         GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/workup_repo_key -o StrictHostKeyChecking=accept-new" \
         git fetch origin main && git reset --hard origin/main
@@ -108,19 +107,27 @@
 
     - name: Write .env from variables
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/frontend.env.j2"
-        dest: "{{ frontend_dir }}/.env"
+        src: "{{ playbook_dir }}/templates/backend.env.j2"
+        dest: "{{ backend_dir }}/.env"
         mode: "0600"
       no_log: true
 
-    - name: Pull images
+    - name: Log in to GitLab Container Registry
+      community.docker.docker_login:
+        registry_url: registry.gitlab.com
+        username: "{{ gitlab_registry_user }}"      
+        password: "{{ gitlab_registry_password }}"
+      no_log: true
+
+    - name: Pull images / build
       community.docker.docker_compose_v2:
-        project_src: "{{ frontend_dir }}"
+        project_src: "{{ backend_dir }}"
         pull: always
+        build: always
         state: present
-    
+
     - name: Bring the stack up
       community.docker.docker_compose_v2:
-        project_src: "{{ frontend_dir }}"
+        project_src: "{{ backend_dir }}"
         state: present
         recreate: always

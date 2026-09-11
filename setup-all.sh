@@ -2,7 +2,11 @@
 set -euo pipefail
 
 PROJECT_PATH=$HOME/on_prem_workup
-COMPOSE_FILE="./docker-compose.yml"
+
+
+# DEV TESTING
+
+#COMPOSE_FILE="./docker-compose.yml"
 
 
 # # KEYCLOAK AUTH SETUP
@@ -43,6 +47,7 @@ cd ${PROJECT_PATH}/infra/terraform
 
 terraform apply --auto-approve
 
+sleep 15
 
 # ANSIBLE SETUP
 

@@ -14,7 +14,7 @@ services:
 
   
   api:
-    build: ./
+    image: registry.gitlab.com/ojejevictor/on-prem-workup-pci-dss/backend:latest
     container_name: workup-api
     restart: unless-stopped
     environment:
