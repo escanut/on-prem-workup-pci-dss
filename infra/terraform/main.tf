@@ -118,65 +118,65 @@ resource "proxmox_virtual_environment_vm" "auth" {
   }
 }
 
-# backend vm
-resource "proxmox_virtual_environment_vm" "backend" {
-  name      = "workup-backend"
-  node_name = var.proxmox_node
+# # backend vm
+# resource "proxmox_virtual_environment_vm" "backend" {
+#   name      = "workup-backend"
+#   node_name = var.proxmox_node
 
-  description = "backend segment (golang)"
-  tags        = ["workup", "backend"]
+#   description = "backend segment (golang)"
+#   tags        = ["workup", "backend"]
 
-  started         = true
-  stop_on_destroy = true
+#   started         = true
+#   stop_on_destroy = true
 
-  # Clone from the template
-  clone {
-    vm_id = var.template_id
-    full  = true                     # full clone (recommended)
-  }
+#   # Clone from the template
+#   clone {
+#     vm_id = var.template_id
+#     full  = true                     # full clone (recommended)
+#   }
 
-  agent {
-    enabled = true
-  }
+#   agent {
+#     enabled = true
+#   }
 
-  cpu {
-    cores = 2
-    type  = "host"
-  }
+#   cpu {
+#     cores = 2
+#     type  = "host"
+#   }
 
-  memory {
-    dedicated = 2048                 
-  }
+#   memory {
+#     dedicated = 2048                 
+#   }
 
-  # You can override disk size if needed
-  disk {
-    datastore_id = var.datastore_id
-    interface    = "virtio0"
-    size         = 10
-  }
+#   # You can override disk size if needed
+#   disk {
+#     datastore_id = var.datastore_id
+#     interface    = "virtio0"
+#     size         = 10
+#   }
 
-  network_device {
-    bridge = "vmbr0"
-    model  = "virtio"
-  }
+#   network_device {
+#     bridge = "vmbr0"
+#     model  = "virtio"
+#   }
 
-  # Cloud-init for this specific VM (IP, hostname, etc.)
-  initialization {
+#   # Cloud-init for this specific VM (IP, hostname, etc.)
+#   initialization {
 
     
-    ip_config {
+#     ip_config {
       
-      ipv4 {
-        address = "192.168.123.23/24"
-        gateway = "192.168.123.2"
-      }
-    }
+#       ipv4 {
+#         address = "192.168.123.23/24"
+#         gateway = "192.168.123.2"
+#       }
+#     }
 
-    dns {
-      servers = ["8.8.8.8", "1.1.1.1"]
-    }
-  }
-}
+#     dns {
+#       servers = ["8.8.8.8", "1.1.1.1"]
+#     }
+#   }
+# }
 
 
 # # observability vm

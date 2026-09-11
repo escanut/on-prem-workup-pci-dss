@@ -55,4 +55,4 @@ cd ${PROJECT_PATH}/infra/ansible
 
 ansible-playbook playbooks/frontend.yml
 ansible-playbook playbooks/auth.yml
-ansible-playbook playbooks/backend.yml
+#ansible-playbook playbooks/backend.yml
