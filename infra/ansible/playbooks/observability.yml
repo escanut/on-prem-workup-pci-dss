@@ -1,15 +1,15 @@
 ---
-- name: Auth - deploy keycloak
-  hosts: auth
+- name: Observability - deploy nginx and cloudflared tunnel
+  hosts: observability
   gather_facts: true
 
   vars_files:
     - ../vars/secrets.yml
     
   vars:
-    deploy_dir: /opt/workup-auth
+    deploy_dir: /opt/workup-observability
     repo_url: "git@gitlab.com:ojejevictor/on-prem-workup-pci-dss.git"
-    auth_dir: "{{ deploy_dir }}/app/auth"
+    observability_dir: "{{ deploy_dir }}/app/observability"
  
   
   tasks:
@@ -97,9 +97,9 @@
             cmd: git sparse-checkout init --cone
             chdir: "{{ deploy_dir }}"
  
-        - name: Restrict sparse-checkout to app/auth only
+        - name: Restrict sparse-checkout to app/observability only
           ansible.builtin.command:
-            cmd: git sparse-checkout set app/auth
+            cmd: git sparse-checkout set app/observability
             chdir: "{{ deploy_dir }}"
 
     - name: Ensure correct remote URL
@@ -109,7 +109,7 @@
       become: false
       changed_when: false
 
-    - name: Fetch and reset to latest main (only downloads app/auth blobs)
+    - name: Fetch and reset to latest main (only downloads app/observability blobs)
       ansible.builtin.shell: |
         GIT_SSH_COMMAND="ssh -i /home/ubuntu/.ssh/workup_repo_key -o StrictHostKeyChecking=accept-new" \
         git fetch origin main && git reset --hard origin/main
@@ -119,8 +119,8 @@
 
     - name: Write .env from variables
       ansible.builtin.template:
-        src: "{{ playbook_dir }}/templates/auth.env.j2"
-        dest: "{{ auth_dir }}/.env"
+        src: "{{ playbook_dir }}/templates/observability.env.j2"
+        dest: "{{ observability_dir }}/.env"
         owner: ubuntu
         group: ubuntu
         mode: "0600"
@@ -128,43 +128,12 @@
 
     - name: Pull images
       community.docker.docker_compose_v2:
-        project_src: "{{ auth_dir }}"
+        project_src: "{{ observability_dir }}"
         pull: always
         state: present
     
     - name: Bring the stack up
       community.docker.docker_compose_v2:
-        project_src: "{{ auth_dir }}"
+        project_src: "{{ observability_dir }}"
         state: present
         recreate: always
-
-    - name: Make bootstrap.sh executable
-      ansible.builtin.file:
-        path: "{{ auth_dir }}/bootstrap.sh"
-        mode: "0755"
-        owner: ubuntu
-        group: ubuntu
-
-    - name: Wait for Keycloak to become ready
-      ansible.builtin.uri:
-        url: "http://localhost:8080/realms/master"
-        status_code: 200
-        return_content: false
-      register: keycloak_ready
-      until: keycloak_ready.status == 200
-      retries: 40
-      delay: 5
-      become: false
-
-    - name: Run Keycloak bootstrap script
-      ansible.builtin.command:
-        cmd: ./bootstrap.sh
-        chdir: "{{ auth_dir }}"
-      register: bootstrap_result
-      changed_when: "'Bootstrap complete' in bootstrap_result.stdout"
-      become: false
-
-    - name: Show bootstrap output
-      ansible.builtin.debug:
-        var: bootstrap_result.stdout_lines
-      when: bootstrap_result.stdout_lines is defined
