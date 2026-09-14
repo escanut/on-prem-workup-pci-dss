@@ -1,0 +1,44 @@
+prometheus.scrape "prometheus" {
+  targets = [{"__address__" = "prometheus:9090"}]
+  metrics_path = "/metrics"
+  scrape_interval = "15s"
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "default" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.containers.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.source.journal "journal" {
+  max_age    = "24h"
+  forward_to = [loki.write.local.receiver]
+  labels     = { job = "systemd-journal", host = "observability" }
+}
+
+local.file_match "audit" {
+  path_targets = [{"__path__" = "/var/log/audit/audit.log"}]
+}
+
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

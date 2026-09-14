@@ -47,7 +47,7 @@ cd ${PROJECT_PATH}/infra/terraform
 
 terraform apply --auto-approve
 
-sleep 15
+sleep 25
 
 # ANSIBLE SETUP
 

@@ -31,8 +31,6 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "${PORT}:${PORT}"
 
     depends_on:
       postgres:
@@ -63,6 +61,10 @@ services:
         - ./alloy-config.river:/etc/alloy/config.alloy:ro
         - /var/run/docker.sock:/var/run/docker.sock:ro
         - /var/lib/docker/containers:/var/lib/docker/containers:ro
+        - /var/log/audit:/var/log/audit:ro
+        - /var/log/journal:/var/log/journal:ro
+        - /run/log/journal:/run/log/journal:ro
+        - /etc/machine-id:/etc/machine-id:ro
       command: run /etc/alloy/config.alloy
       environment:
         CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID}

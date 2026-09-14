@@ -5,6 +5,8 @@
 
   vars_files:
     - ../vars/secrets.yml
+    - ../vars/management.yml
+    - ../vars/os_hardening.yml
     
   vars:
     deploy_dir: /opt/workup-auth
@@ -13,6 +15,15 @@
  
   
   tasks:
+
+    - name: Configure host firewall
+      ansible.builtin.import_tasks: tasks/host_firewall.yml
+      tags: [firewall]
+
+    - name: Apply base OS hardening
+      ansible.builtin.import_tasks: tasks/os_hardening.yml
+      tags: [hardening]
+        
     - name: Ping the host
       ansible.builtin.ping:
 
@@ -168,3 +179,9 @@
       ansible.builtin.debug:
         var: bootstrap_result.stdout_lines
       when: bootstrap_result.stdout_lines is defined
+
+  handlers:
+  - name: Restart ssh
+    ansible.builtin.systemd:
+      name: ssh
+      state: restarted

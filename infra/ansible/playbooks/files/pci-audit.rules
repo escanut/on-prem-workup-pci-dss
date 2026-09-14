@@ -1,0 +1,35 @@
+## 10.2.1.6 — audit subsystem itself
+-w /etc/audit/ -p wa -k audit_config
+-w /etc/libaudit.conf -p wa -k audit_config
+-w /sbin/auditctl -p x -k audit_tools
+-w /sbin/auditd -p x -k audit_tools
+
+## 10.2.1.5 — identity & authentication changes
+-w /etc/passwd -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/security/opasswd -p wa -k identity
+-w /etc/sudoers -p wa -k identity
+-w /etc/sudoers.d/ -p wa -k identity
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+-w /etc/ssh/sshd_config.d/ -p wa -k sshd_config
+
+## 10.2.1.2 — privileged commands
+-w /usr/bin/sudo -p x -k privileged
+-w /usr/bin/su -p x -k privileged
+-w /usr/bin/passwd -p x -k privileged
+-w /usr/sbin/useradd -p x -k privileged
+-w /usr/sbin/userdel -p x -k privileged
+-w /usr/sbin/usermod -p x -k privileged
+-w /usr/sbin/groupadd -p x -k privileged
+-w /usr/sbin/groupdel -p x -k privileged
+-w /usr/sbin/groupmod -p x -k privileged
+
+## 10.2.1.3 — access to audit logs
+-w /var/log/audit/ -p rwa -k audit_log_access
+
+## 10.2.1.4 — failed login tracking files
+-w /var/log/faillog -p wa -k logins
+-w /var/log/lastlog -p wa -k logins
+-w /var/run/faillock/ -p wa -k logins

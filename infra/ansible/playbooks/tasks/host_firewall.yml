@@ -1,0 +1,32 @@
+---
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+- name: Reset ufw to defaults (deny incoming, allow outgoing)
+  community.general.ufw:
+    state: reset
+
+- name: Set default incoming policy to deny
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set default outgoing policy to allow
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Allow SSH from management network
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    src: "{{ management_network | default('192.168.123.0/24') }}"
+    comment: SSH from management
+
+- name: Enable ufw
+  community.general.ufw:
+    state: enabled

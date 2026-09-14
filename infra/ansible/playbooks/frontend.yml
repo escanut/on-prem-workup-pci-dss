@@ -5,6 +5,8 @@
 
   vars_files:
     - ../vars/secrets.yml
+    - ../vars/management.yml
+    - ../vars/os_hardening.yml
     
   vars:
     deploy_dir: /opt/workup-frontend
@@ -13,6 +15,15 @@
  
   
   tasks:
+
+    - name: Configure host firewall
+      ansible.builtin.import_tasks: tasks/host_firewall.yml
+      tags: [firewall]
+
+    - name: Apply base OS hardening
+      ansible.builtin.import_tasks: tasks/os_hardening.yml
+      tags: [hardening]
+
     - name: Ping the host
       ansible.builtin.ping:
 
@@ -137,3 +148,9 @@
         project_src: "{{ frontend_dir }}"
         state: present
         recreate: always
+  
+  handlers:
+  - name: Restart ssh
+    ansible.builtin.systemd:
+      name: ssh
+      state: restarted

@@ -20,4 +20,21 @@ services:
       - ./static_files:/usr/share/nginx/html:ro
     
 
-  
+  alloy:
+      image: grafana/alloy:latest
+      container_name: workup-auth-alloy
+      restart: unless-stopped
+      volumes:
+        - ./alloy-config.river:/etc/alloy/config.alloy:ro
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+        - /var/lib/docker/containers:/var/lib/docker/containers:ro
+        - /var/log/audit:/var/log/audit:ro
+        - /var/log/journal:/var/log/journal:ro
+        - /run/log/journal:/run/log/journal:ro
+        - /etc/machine-id:/etc/machine-id:ro
+      command: run /etc/alloy/config.alloy
+      environment:
+        CF_ACCESS_CLIENT_ID: ${CF_ACCESS_CLIENT_ID}
+        CF_ACCESS_CLIENT_SECRET: ${CF_ACCESS_CLIENT_SECRET}
+      depends_on:
+        - nginx

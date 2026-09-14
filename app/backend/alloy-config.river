@@ -25,6 +25,21 @@ loki.source.docker "default" {
   forward_to = [loki.write.central.receiver]
 }
 
+loki.source.journal "journal" {
+  max_age    = "24h"
+  forward_to = [loki.write.central.receiver]
+  labels     = { job = "systemd-journal", host = "backend" }
+}
+
+local.file_match "audit" {
+  path_targets = [{"__path__" = "/var/log/audit/audit.log"}]
+}
+
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.write.central.receiver]
+}
+
 loki.write "central" {
   endpoint {
     url = "https://logs.victorojeje.xyz/loki/api/v1/push"

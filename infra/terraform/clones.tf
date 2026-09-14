@@ -25,7 +25,7 @@ resource "proxmox_virtual_environment_vm" "frontend" {
   }
 
   memory {
-    dedicated = 2048                 
+    dedicated = 300             
   }
 
   # You can override disk size if needed
@@ -38,7 +38,10 @@ resource "proxmox_virtual_environment_vm" "frontend" {
   network_device {
     bridge = "vmbr0"
     model  = "virtio"
+    firewall = true
   }
+
+  
 
   # Cloud-init for this specific VM (IP, hostname, etc.)
   initialization {
@@ -85,7 +88,7 @@ resource "proxmox_virtual_environment_vm" "auth" {
   }
 
   memory {
-    dedicated = 2048                 
+    dedicated = 1536                 
   }
 
   # You can override disk size if needed
@@ -98,6 +101,7 @@ resource "proxmox_virtual_environment_vm" "auth" {
   network_device {
     bridge = "vmbr0"
     model  = "virtio"
+    firewall = true
   }
 
   # Cloud-init for this specific VM (IP, hostname, etc.)
@@ -145,7 +149,7 @@ resource "proxmox_virtual_environment_vm" "backend" {
   }
 
   memory {
-    dedicated = 2048                 
+    dedicated = 712               
   }
 
   # You can override disk size if needed
@@ -158,6 +162,7 @@ resource "proxmox_virtual_environment_vm" "backend" {
   network_device {
     bridge = "vmbr0"
     model  = "virtio"
+    firewall = true
   }
 
   # Cloud-init for this specific VM (IP, hostname, etc.)
@@ -206,7 +211,7 @@ resource "proxmox_virtual_environment_vm" "observability" {
   }
 
   memory {
-    dedicated = 2048                 
+    dedicated = 1536                
   }
 
   # You can override disk size if needed
@@ -219,6 +224,7 @@ resource "proxmox_virtual_environment_vm" "observability" {
   network_device {
     bridge = "vmbr0"
     model  = "virtio"
+    firewall = true
   }
 
   # Cloud-init for this specific VM (IP, hostname, etc.)

@@ -58,6 +58,36 @@ REALM_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
   "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}")
 
+# Shared by create + update so the two paths stay identical
+REALM_SETTINGS=$(cat <<EOF
+{
+  "realm": "${REALM_NAME}",
+  "enabled": true,
+  "sslRequired": "external",
+  "loginTheme": "keycloak",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": false,
+  "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and passwordHistory(5)",
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5
+}
+EOF
+)
+
 if [ "${REALM_STATUS}" = "200" ]; then
   echo "Realm already exists. Updating realm settings..."
 
@@ -65,18 +95,7 @@ if [ "${REALM_STATUS}" = "200" ]; then
     "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{
-      \"realm\": \"${REALM_NAME}\",
-      \"enabled\": true,
-      \"sslRequired\": \"external\",
-      \"loginTheme\": \"keycloak\",
-      \"accessTokenLifespan\": 300,
-      \"ssoSessionIdleTimeout\": 1800,
-      \"registrationAllowed\": true,
-      \"registrationEmailAsUsername\": true,
-      \"verifyEmail\": true,
-      \"resetPasswordAllowed\": true
-    }")
+    -d "${REALM_SETTINGS}")
 
   if [ "${UPDATE_STATUS}" = "204" ]; then
     echo "Realm settings updated."
@@ -93,18 +112,7 @@ else
     "${KEYCLOAK_URL}/admin/realms" \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
-    -d "{
-      \"realm\": \"${REALM_NAME}\",
-      \"enabled\": true,
-      \"sslRequired\": \"external\",
-      \"loginTheme\": \"keycloak\",
-      \"accessTokenLifespan\": 300,
-      \"ssoSessionIdleTimeout\": 1800,
-      \"registrationAllowed\": true,
-      \"registrationEmailAsUsername\": true,
-      \"verifyEmail\": false,
-      \"resetPasswordAllowed\": true
-    }")
+    -d "${REALM_SETTINGS}")
 
   if [ "${CREATE_STATUS}" = "201" ]; then
     echo "Realm created."
@@ -251,6 +259,39 @@ else
 fi
 
 # --------------------------------------------------------------------
+# Admin role creation (Users will be created via GUI)
+# --------------------------------------------------------------------
+ 
+echo "Creating realm role 'admin' for RBAC (Req 7)..."
+ 
+ADMIN_ROLE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles/admin" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}")
+ 
+if [ "${ADMIN_ROLE_STATUS}" = "200" ]; then
+  echo "Role 'admin' already exists. Skipping."
+else
+  echo "Creating role: admin..."
+  CREATE_ROLE_STATUS=$(curl -s -o /tmp/role_create.json -w "%{http_code}" -X POST \
+    "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles" \
+    -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"name\": \"admin\",
+      \"description\": \"WorkUp platform/infra owner — maps to Grafana Admin via role_attribute_path. Assigned manually to individual users through Keycloak Admin Console as part of onboarding, not created by this script.\"
+    }")
+ 
+  if [ "${CREATE_ROLE_STATUS}" = "201" ]; then
+    echo "Role 'admin' created."
+  else
+    echo "Role 'admin' creation failed (HTTP ${CREATE_ROLE_STATUS}):"
+    cat /tmp/role_create.json
+  fi
+fi
+ 
+rm -f /tmp/role_create.json
+
+# --------------------------------------------------------------------
 # Cloudflare Access Client (confidential)
 # --------------------------------------------------------------------
 
@@ -319,35 +360,35 @@ rm -f \
   /tmp/cf_client_create.json
 
 
-echo
-echo "============================================================"
-echo " Bootstrap complete"
-echo "============================================================"
-echo
-echo "OIDC discovery URL:"
-echo "  ${KEYCLOAK_URL}/realms/${REALM_NAME}/.well-known/openid-configuration"
-echo
-echo "Frontend config:"
-echo "  KEYCLOAK_URL : ${KEYCLOAK_URL}"
-echo "  REALM        : ${REALM_NAME}"
-echo "  CLIENT_ID    : ${CLIENT_ID}"
-echo
-echo "Cloudflare Access (use these values in Zero Trust → Identity providers → OpenID Connect):"
-echo "  Client ID     : ${CF_CLIENT_ID}"
-echo "  Client Secret : ${CF_CLIENT_SECRET}"
-echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
-echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
-echo "  Certs URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/certs"
-echo
-echo "Redirect URI used : ${CLOUDFLARE_CALLBACK}"
-echo "============================================================"
+# echo
+# echo "============================================================"
+# echo " Bootstrap complete"
+# echo "============================================================"
+# echo
+# echo "OIDC discovery URL:"
+# echo "  ${KEYCLOAK_URL}/realms/${REALM_NAME}/.well-known/openid-configuration"
+# echo
+# echo "Frontend config:"
+# echo "  KEYCLOAK_URL : ${KEYCLOAK_URL}"
+# echo "  REALM        : ${REALM_NAME}"
+# echo "  CLIENT_ID    : ${CLIENT_ID}"
+# echo
+# echo "Cloudflare Access (use these values in Zero Trust → Identity providers → OpenID Connect):"
+# echo "  Client ID     : ${CF_CLIENT_ID}"
+# echo "  Client Secret : ${CF_CLIENT_SECRET}"
+# echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
+# echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
+# echo "  Certs URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/certs"
+# echo
+# echo "Redirect URI used : ${CLOUDFLARE_CALLBACK}"
+# echo "============================================================"
 
 
-echo
-echo "Grafana SSO (use these values in Grafana env / grafana.ini):"
-echo "  Client ID     : ${GRAFANA_CLIENT_ID}"
-echo "  Client Secret : ${GF_CLIENT_SECRET}"
-echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
-echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
-echo "  API URL       : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/userinfo"
-echo "  Redirect URI  : ${GRAFANA_URL}/login/generic_oauth"
+# echo
+# echo "Grafana SSO (use these values in Grafana env / grafana.ini):"
+# echo "  Client ID     : ${GRAFANA_CLIENT_ID}"
+# echo "  Client Secret : ${GF_CLIENT_SECRET}"
+# echo "  Auth URL      : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/auth"
+# echo "  Token URL     : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/token"
+# echo "  API URL       : ${AUTH_URL}/realms/${REALM_NAME}/protocol/openid-connect/userinfo"
+# echo "  Redirect URI  : ${GRAFANA_URL}/login/generic_oauth"

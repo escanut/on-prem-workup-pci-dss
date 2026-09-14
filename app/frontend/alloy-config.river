@@ -1,20 +1,3 @@
-prometheus.scrape "keycloak" {
-  targets = [{"__address__" = "keycloak:9000"}]
-  metrics_path = "/metrics"
-  scrape_interval = "15s"
-  forward_to = [prometheus.remote_write.central.receiver]
-}
-
-prometheus.remote_write "central" {
-  endpoint {
-    url = "https://metrics.victorojeje.xyz/api/v1/write"
-    headers = {
-      "CF-Access-Client-Id"     = env("CF_ACCESS_CLIENT_ID"),
-      "CF-Access-Client-Secret" = env("CF_ACCESS_CLIENT_SECRET"),
-    }
-  }
-}
-
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
 }
@@ -28,7 +11,7 @@ loki.source.docker "default" {
 loki.source.journal "journal" {
   max_age    = "24h"
   forward_to = [loki.write.central.receiver]
-  labels     = { job = "systemd-journal", host = "auth" }
+  labels     = { job = "systemd-journal", host = "backend" }
 }
 
 local.file_match "audit" {

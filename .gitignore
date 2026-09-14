@@ -6,5 +6,4 @@ terraform.tfvars
 ./terraform*
 .env
 *.img
-infra/ansible/group_vars/*
-infra/ansible/vars/*
+infra/ansible/vars/secrets.yml

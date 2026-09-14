@@ -42,7 +42,6 @@ services:
       GF_SERVER_ROOT_URL: https://grafana.victorojeje.xyz
       GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
       GF_AUTH_GENERIC_OAUTH_NAME: "Keycloak"
-      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
       GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
       GF_AUTH_GENERIC_OAUTH_CLIENT_ID: "grafana"
       GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET: ${GF_CLIENT_SECRET}
@@ -50,12 +49,39 @@ services:
       GF_AUTH_GENERIC_OAUTH_AUTH_URL: ${GF_AUTH_GENERIC_OAUTH_AUTH_URL}
       GF_AUTH_GENERIC_OAUTH_TOKEN_URL: ${GF_AUTH_GENERIC_OAUTH_TOKEN_URL}
       GF_AUTH_GENERIC_OAUTH_API_URL: ${GF_AUTH_GENERIC_OAUTH_API_URL}
+
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+
+      # If the role array we recieve from keycloak token is admin, treat the user as an Grafana Admin
+      # if not, deny access
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH: "contains(realm_access.roles[*], 'admin') && 'Admin' || 'None'"
+      GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_STRICT: "true"
+
+
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
       - loki
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: workup-observability-alloy
+    restart: unless-stopped
+    volumes:
+      - ./alloy-config.river:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log/audit:/var/log/audit:ro
+      - /var/log/journal:/var/log/journal:ro
+      - /run/log/journal:/run/log/journal:ro
+      - /etc/machine-id:/etc/machine-id:ro
+    command: run /etc/alloy/config.alloy
+    depends_on:
+      - prometheus
+      - loki
+      - grafana
   
 volumes:
   prometheus-data:
