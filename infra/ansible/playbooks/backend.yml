@@ -23,6 +23,9 @@
       ansible.builtin.import_tasks: tasks/os_hardening.yml
       tags: [hardening]
           
+    - name: PCI DSS host audit logging
+      ansible.builtin.import_tasks: tasks/auditd.yml
+      tags: [auditd, hardening]
 
     - name: Ping the host
       ansible.builtin.ping:
@@ -162,3 +165,7 @@
     ansible.builtin.systemd:
       name: ssh
       state: restarted
+  
+  - name: Reload auditd rules
+    ansible.builtin.command: augenrules --load
+    changed_when: true

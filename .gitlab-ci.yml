@@ -1,20 +1,53 @@
 ---
 
 stages:
+  - test
   - build
-
-
-default:
-  image: docker:27
-  services:
-    - docker:27-dind
-  before_script:
-    - docker info
-    - echo "Logging into GitLab Container Registry..."
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  - scan
 
 variables:
   BACKEND_IMAGE: $CI_REGISTRY_IMAGE/backend
+  SAST_EXCLUDED_ANALYZERS: "brakeman,flawfinder,nodejs-scan,phpcs-security-audit,pmd-apex,security-code-scan,sobelow,spotbugs"
+
+
+default:
+  interruptible: true
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+
+semgrep-sast:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+gosec-sast:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  allow_failure: true
+
+secret_detection:
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+govulncheck:
+  stage: test
+  image: golang:1.25
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - cd app/backend
+    - go install golang.org/x/vuln/cmd/govulncheck@latest
+    - govulncheck ./...
+  allow_failure: true
 
 build-backend:
   stage: build
@@ -34,3 +67,35 @@ build-backend:
   # Only run this job on the main branch for now
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+
+trivy-container:
+  stage: scan
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  needs:
+    - build-backend
+  variables:
+    TRIVY_USERNAME: $CI_REGISTRY_USER
+    TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+  script:
+    - trivy --version
+    - |
+      trivy image \
+        --severity HIGH,CRITICAL \
+        --format json \
+        --output gl-container-scanning-report.json \
+        "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - |
+      trivy image \
+        --severity HIGH,CRITICAL \
+        --exit-code 0 \
+        "$BACKEND_IMAGE:$CI_COMMIT_SHORT_SHA"
+  artifacts:
+    when: always
+    paths:
+      - gl-container-scanning-report.json
+    expire_in: 30 days
+  allow_failure: true
