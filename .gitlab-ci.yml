@@ -39,7 +39,7 @@ secret_detection:
 
 govulncheck:
   stage: test
-  image: golang:1.25
+  image: golang:1.27
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
