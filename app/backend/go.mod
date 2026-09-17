@@ -7,7 +7,7 @@ require (
 	github.com/gin-contrib/logger v0.2.6
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/zerolog v1.33.0
 	github.com/stripe/stripe-go/v82 v82.5.1
