@@ -11,6 +11,7 @@
       - apt-listchanges
       - fail2ban
       - auditd
+      - jq
       - chrony
       - libpam-pwquality
     state: present

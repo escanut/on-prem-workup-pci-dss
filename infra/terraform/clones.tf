@@ -25,7 +25,7 @@ resource "proxmox_virtual_environment_vm" "frontend" {
   }
 
   memory {
-    dedicated = 300             
+    dedicated = 768            
   }
 
   # You can override disk size if needed
@@ -149,7 +149,7 @@ resource "proxmox_virtual_environment_vm" "backend" {
   }
 
   memory {
-    dedicated = 712               
+    dedicated = 1024               
   }
 
   # You can override disk size if needed

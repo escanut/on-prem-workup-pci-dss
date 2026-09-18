@@ -22,7 +22,7 @@ GRAFANA_URL="https://grafana.victorojeje.xyz"
 CLOUDFLARE_TEAM_NAME="${CLOUDFLARE_TEAM_NAME:?CLOUDFLARE_TEAM_NAME not set}"
 CLOUDFLARE_CALLBACK="https://${CLOUDFLARE_TEAM_NAME}.cloudflareaccess.com/cdn-cgi/access/callback"
 
-ADMIN_USER="admin"
+ADMIN_USER="${KC_ADMIN_USERNAME:?KC_ADMIN_USERNAME not set}"
 ADMIN_PASS="${KC_ADMIN_PASSWORD:?KC_ADMIN_PASSWORD not set}"
 
 REALM_NAME="workup"
@@ -83,7 +83,18 @@ REALM_SETTINGS=$(cat <<EOF
   "waitIncrementSeconds": 60,
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
-  "failureFactor": 5
+  "failureFactor": 5,
+  "smtpServer": {
+    "host": "smtp.resend.com",
+    "port": "465",
+    "from": "${SMTP_FROM}",
+    "fromDisplayName": "${SMTP_FROM_DISPLAY_NAME}",
+    "ssl": "true",
+    "starttls": "false",
+    "auth": "true",
+    "user": "resend",
+    "password": "${RESEND_API_KEY}"
+  }
 }
 EOF
 )
