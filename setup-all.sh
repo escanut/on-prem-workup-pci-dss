@@ -36,24 +36,24 @@ PROJECT_PATH=$HOME/on_prem_workup
 
 # # TEMPLATE STEP
 
-cd ${PROJECT_PATH}/infra
+# cd ${PROJECT_PATH}/infra
 
-./template.sh
+# ./template.sh
 
 
-# TERRAFORM SETUP
+# # TERRAFORM SETUP
 
-cd ${PROJECT_PATH}/infra/terraform
+# cd ${PROJECT_PATH}/infra/terraform
 
-terraform apply --auto-approve
+# terraform apply --auto-approve
 
-sleep 25
+# sleep 25
 
-# ANSIBLE SETUP
+# # ANSIBLE SETUP
 
 cd ${PROJECT_PATH}/infra/ansible
 
-ansible-playbook playbooks/frontend.yml
+# ansible-playbook playbooks/frontend.yml
 ansible-playbook playbooks/auth.yml
 ansible-playbook playbooks/backend.yml
 ansible-playbook playbooks/observability.yml
