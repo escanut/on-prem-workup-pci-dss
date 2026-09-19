@@ -1,4 +1,9 @@
 ---
+- name: Ensure system clock is correct before apt operations
+  ansible.builtin.command: chronyc -a makestep
+  changed_when: false
+  failed_when: false
+
 - name: Install ufw
   ansible.builtin.apt:
     name: ufw
