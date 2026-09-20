@@ -1,9 +1,16 @@
-discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
-}
 
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "job"
+  }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
@@ -12,15 +19,10 @@ discovery.relabel "containers" {
   }
 
   rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "service_name"
+    target_label = "host"
+    replacement  = "auth"
   }
 
-  rule {
-    target_label = "host"
-    replacement  = "frontend"
-  }
 }
 
 loki.source.docker "default" {
@@ -62,7 +64,12 @@ loki.relabel "audit" {
     target_label = "host"
     replacement  = "frontend"
   }
+}
 
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.relabel.audit.receiver]
+}
 
 loki.write "central" {
   endpoint {

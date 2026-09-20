@@ -1,37 +1,37 @@
-prometheus.scrape "workup_api" {
-  targets = [{"__address__" = "api:8081"}]
-  metrics_path = "/metrics"
-  scrape_interval = "15s"
-  forward_to = [prometheus.remote_write.central.receiver]
-}
+  prometheus.scrape "workup_api" {
+    targets = [{"__address__" = "api:8081"}]
+    metrics_path = "/metrics"
+    scrape_interval = "15s"
+    forward_to = [prometheus.remote_write.central.receiver]
+  }
 
-prometheus.remote_write "central" {
-  endpoint {
-    url = "https://metrics.victorojeje.xyz/api/v1/write"
-    headers = {
-      "CF-Access-Client-Id"     = env("CF_ACCESS_CLIENT_ID"),
-      "CF-Access-Client-Secret" = env("CF_ACCESS_CLIENT_SECRET"),
+  prometheus.remote_write "central" {
+    endpoint {
+      url = "https://metrics.victorojeje.xyz/api/v1/write"
+      headers = {
+        "CF-Access-Client-Id"     = env("CF_ACCESS_CLIENT_ID"),
+        "CF-Access-Client-Secret" = env("CF_ACCESS_CLIENT_SECRET"),
+      }
     }
   }
-}
 
-discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
-}
-
-discovery.relabel "containers" {
+  discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "job"
+  }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
     target_label  = "container"
-  }
-
-  rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "service_name"
   }
 
   rule {
@@ -46,23 +46,23 @@ loki.source.docker "default" {
   forward_to = [loki.write.central.receiver]
 }
 
-loki.source.journal "journal" {
-  max_age    = "24h"
-  forward_to = [loki.relabel.journal.receiver]
-}
-
-loki.relabel "journal" {
-  forward_to = [loki.write.central.receiver]
-
-  rule {
-    target_label = "job"
-    replacement  = "systemd-journal"
+  loki.source.journal "journal" {
+    max_age    = "24h"
+    forward_to = [loki.relabel.journal.receiver]
   }
-  rule {
-    target_label = "host"
-    replacement  = "backend"
+
+  loki.relabel "journal" {
+    forward_to = [loki.write.central.receiver]
+
+    rule {
+      target_label = "job"
+      replacement  = "systemd-journal"
+    }
+    rule {
+      target_label = "host"
+      replacement  = "backend"
+    }
   }
-}
 
 local.file_match "audit" {
   path_targets = [{"__path__" = "/var/log/audit/audit.log"}]
@@ -79,14 +79,21 @@ loki.relabel "audit" {
     target_label = "host"
     replacement  = "backend"
   }
+}
+
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.relabel.audit.receiver]
+}
 
 
-loki.write "central" {
-  endpoint {
-    url = "https://logs.victorojeje.xyz/loki/api/v1/push"
-    headers = {
-      "CF-Access-Client-Id"     = env("CF_ACCESS_CLIENT_ID"),
-      "CF-Access-Client-Secret" = env("CF_ACCESS_CLIENT_SECRET"),
+
+  loki.write "central" {
+    endpoint {
+      url = "https://logs.victorojeje.xyz/loki/api/v1/push"
+      headers = {
+        "CF-Access-Client-Id"     = env("CF_ACCESS_CLIENT_ID"),
+        "CF-Access-Client-Secret" = env("CF_ACCESS_CLIENT_SECRET"),
+      }
     }
   }
-}

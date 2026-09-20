@@ -12,23 +12,23 @@ prometheus.remote_write "local" {
   }
 }
 
-discovery.docker "containers" {
-  host = "unix:///var/run/docker.sock"
-}
-
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
   rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/(.*)"
-    target_label  = "container"
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "job"
   }
 
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
-    target_label  = "service_name"
+    target_label  = "container"
   }
 
   rule {
@@ -40,7 +40,7 @@ discovery.relabel "containers" {
 loki.source.docker "default" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.containers.output
-  forward_to = [loki.write.local.receiver]
+  forward_to = [loki.write.central.receiver]
 }
 
 loki.source.journal "journal" {
@@ -76,6 +76,13 @@ loki.relabel "audit" {
     target_label = "host"
     replacement  = "observability"
   }
+
+}
+
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.relabel.audit.receiver]
+}
 
 
 loki.write "local" {
