@@ -34,6 +34,7 @@ cd ${PROJECT_PATH}/app/backend
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
 
+
 # TEMPLATE STEP
 
 cd ${PROJECT_PATH}/infra

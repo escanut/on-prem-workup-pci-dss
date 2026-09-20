@@ -19,9 +19,30 @@ discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
 }
 
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "service_name"
+  }
+
+  rule {
+    target_label = "host"
+    replacement  = "backend"
+  }
+}
+
 loki.source.docker "default" {
   host       = "unix:///var/run/docker.sock"
-  targets    = discovery.docker.containers.targets
+  targets    = discovery.relabel.containers.output
   forward_to = [loki.write.central.receiver]
 }
 
@@ -47,10 +68,18 @@ local.file_match "audit" {
   path_targets = [{"__path__" = "/var/log/audit/audit.log"}]
 }
 
-loki.source.file "audit" {
-  targets    = local.file_match.audit.targets
+loki.relabel "audit" {
   forward_to = [loki.write.central.receiver]
-}
+
+  rule {
+    target_label = "job"
+    replacement  = "auditd"
+  }
+  rule {
+    target_label = "host"
+    replacement  = "backend"
+  }
+
 
 loki.write "central" {
   endpoint {
