@@ -15,6 +15,12 @@ prometheus.remote_write "central" {
   }
 }
 
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  
+}
+
+
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 

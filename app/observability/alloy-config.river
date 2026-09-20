@@ -12,6 +12,10 @@ prometheus.remote_write "local" {
   }
 }
 
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
@@ -40,7 +44,7 @@ discovery.relabel "containers" {
 loki.source.docker "default" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.containers.output
-  forward_to = [loki.write.central.receiver]
+  forward_to = [loki.write.local.receiver]
 }
 
 loki.source.journal "journal" {

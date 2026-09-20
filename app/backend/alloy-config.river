@@ -15,7 +15,14 @@
     }
   }
 
-  discovery.relabel "containers" {
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  
+}
+
+
+  
+discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
 
   rule {
