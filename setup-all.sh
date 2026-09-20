@@ -6,7 +6,7 @@ PROJECT_PATH=$HOME/on_prem_workup
 
 # DEV TESTING
 
-#COMPOSE_FILE="./docker-compose.yml"
+# COMPOSE_FILE="./docker-compose.yml"
 
 
 # # KEYCLOAK AUTH SETUP
@@ -22,26 +22,26 @@ PROJECT_PATH=$HOME/on_prem_workup
 # docker compose down -v
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
-# # BACKEND APP SETUP
-# cd ${PROJECT_PATH}/app/backend
-# go mod tidy -e -x -v
+# BACKEND APP SETUP
+cd ${PROJECT_PATH}/app/backend
+# # go mod tidy -e -x -v
 # docker compose down  -v
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
 # # OBSERVABILITY SETUP
-# cd ${PROJECT_PATH}/observability
+# cd ${PROJECT_PATH}/app/observability
 # docker compose down  -v
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
 
-# # TEMPLATE STEP
+# TEMPLATE STEP
 
 cd ${PROJECT_PATH}/infra
 
 ./template.sh
 
 
-# # TERRAFORM SETUP
+# TERRAFORM SETUP
 
 cd ${PROJECT_PATH}/infra/terraform
 
@@ -49,7 +49,7 @@ terraform apply --auto-approve
 
 sleep 25
 
-# # ANSIBLE SETUP
+# ANSIBLE SETUP
 
 cd ${PROJECT_PATH}/infra/ansible
 

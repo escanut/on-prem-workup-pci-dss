@@ -27,8 +27,20 @@ loki.source.docker "default" {
 
 loki.source.journal "journal" {
   max_age    = "24h"
+  forward_to = [loki.relabel.journal.receiver]
+}
+
+loki.relabel "journal" {
   forward_to = [loki.write.central.receiver]
-  labels     = { job = "systemd-journal", host = "backend" }
+
+  rule {
+    target_label = "job"
+    replacement  = "systemd-journal"
+  }
+  rule {
+    target_label = "host"
+    replacement  = "backend"
+  }
 }
 
 local.file_match "audit" {

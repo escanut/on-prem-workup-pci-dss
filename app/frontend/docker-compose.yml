@@ -22,7 +22,7 @@ services:
 
   alloy:
       image: grafana/alloy:latest
-      container_name: workup-auth-alloy
+      container_name: workup-frontend-alloy
       restart: unless-stopped
       volumes:
         - ./alloy-config.river:/etc/alloy/config.alloy:ro
