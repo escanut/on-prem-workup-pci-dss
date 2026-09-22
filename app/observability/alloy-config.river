@@ -88,6 +88,28 @@ loki.source.file "audit" {
   forward_to = [loki.relabel.audit.receiver]
 }
 
+loki.source.file "aide_logs" {
+  targets    = local.file_match.aide.targets
+  forward_to = [loki.relabel.aide.receiver]
+}
+
+local.file_match "aide" {
+  path_targets = [{"__path__" = "/var/log/aide/*.log"}]
+}
+
+loki.relabel "aide" {
+  forward_to = [loki.write.local.receiver]
+
+  rule {
+    target_label = "job"
+    replacement  = "aide-fim"
+  }
+  
+  rule {
+    target_label = "host"
+    replacement  = "observability"
+  }
+}
 
 loki.write "local" {
   endpoint {

@@ -79,6 +79,7 @@ services:
       - /var/log/journal:/var/log/journal:ro
       - /run/log/journal:/run/log/journal:ro
       - /etc/machine-id:/etc/machine-id:ro
+      - /var/log/aide:/var/log/aide:ro
     command: run /etc/alloy/config.alloy
     depends_on:
       - prometheus

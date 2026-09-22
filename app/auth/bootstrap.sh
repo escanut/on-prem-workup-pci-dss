@@ -79,7 +79,7 @@ REALM_SETTINGS=$(cat <<EOF
   "sslRequired": "external",
   "loginTheme": "keycloak",
   "accessTokenLifespan": 300,
-  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionIdleTimeout": 900,
   "ssoSessionMaxLifespan": 28800,
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
@@ -91,7 +91,7 @@ REALM_SETTINGS=$(cat <<EOF
   "passwordPolicy": "length(12) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notUsername and passwordHistory(5)",
   "bruteForceProtected": true,
   "permanentLockout": false,
-  "maxFailureWaitSeconds": 900,
+  "maxFailureWaitSeconds": 1800,
   "minimumQuickLoginWaitSeconds": 60,
   "waitIncrementSeconds": 60,
   "quickLoginCheckMilliSeconds": 1000,
@@ -147,6 +147,34 @@ else
   fi
 fi
 
+# --------------------------------------------------------------------
+# OTP setup
+# --------------------------------------------------------------------
+
+echo "Configuring required actions (OTP) on realm: ${REALM_NAME}..."
+
+REQUIRED_ACTIONS_STATUS=$(curl -s -o /tmp/required_actions.json -w "%{http_code}" -X PUT \
+  "${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/authentication/required-actions/CONFIGURE_TOTP" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "alias": "CONFIGURE_TOTP",
+    "name": "Configure OTP",
+    "providerId": "CONFIGURE_TOTP",
+    "enabled": true,
+    "defaultAction": true,
+    "priority": 10,
+    "config": {}
+  }')
+
+if [ "${REQUIRED_ACTIONS_STATUS}" = "204" ] || [ "${REQUIRED_ACTIONS_STATUS}" = "200" ]; then
+  echo "CONFIGURE_TOTP set as default required action."
+else
+  echo "Failed to set CONFIGURE_TOTP (HTTP ${REQUIRED_ACTIONS_STATUS}):"
+  cat /tmp/required_actions.json
+fi
+
+rm -f /tmp/required_actions.json
 
 # --------------------------------------------------------------------
 # User events

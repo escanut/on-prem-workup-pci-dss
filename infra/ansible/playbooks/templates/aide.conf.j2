@@ -1,0 +1,31 @@
+database=file:/var/lib/aide/aide.db
+database_out=file:/var/lib/aide/aide.db.new
+report_url=stdout
+
+# Rules
+R = p+sha256
+NORMAL = R
+L = p+u+g+sha256+acl+xattrs+selinux
+
+/boot   L
+/bin    L
+/sbin   L
+/lib    L
+/lib64  L
+/usr    L
+/etc    L
+/root   L
+/opt    L
+/var/spool/cron L
+
+# Noise reduction — skip volatile paths
+!/proc
+!/sys
+!/dev
+!/run
+!/tmp
+!/var/tmp
+!/var/log
+!/var/cache
+!/var/lib/aide
+!/home/*/.cache

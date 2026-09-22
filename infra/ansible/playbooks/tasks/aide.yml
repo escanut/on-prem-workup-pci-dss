@@ -1,0 +1,57 @@
+---
+- name: Install AIDE
+  package:
+    name:
+      - aide
+      - aide-common  
+    state: present
+
+- name: Deploy AIDE configuration
+  template:
+    src: templates/aide.conf.j2
+    dest: /etc/aide/aide.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reinitialize AIDE database
+
+- name: Initialize AIDE database (first run only)
+  command: aideinit -y -f
+  args:
+    creates: /var/lib/aide/aide.db.new   
+  notify: Promote AIDE database
+
+- name: Create AIDE log directory
+    file:
+      path: /var/log/aide
+      state: directory
+      owner: root
+      group: root
+      mode: '0750'
+
+- name: Install daily integrity check cron
+  cron:
+    name: "PCI DSS 11.5.1 — AIDE daily integrity check"
+    minute: "17"
+    hour: "3"
+    user: root
+    job: "/usr/sbin/aide --check > /var/log/aide/aide-check-$(date +\\%Y\\%m\\%d).log 2>&1 || true"
+    state: present
+
+  
+- name: Configure logrotate for AIDE logs
+  copy:
+    content: |
+      /var/log/aide/*.log {
+          daily
+          rotate 90
+          compress
+          delaycompress
+          missingok
+          notifempty
+          create 0640 root root
+      }
+    dest: /etc/logrotate.d/aide
+    owner: root
+    group: root
+    mode: '0644

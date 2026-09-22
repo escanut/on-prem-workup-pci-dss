@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-VM_IDS=(100 101 102 103 9000)
+VM_IDS=(100 101 102 103 104 105 106 107 108 109 9000)
 IMG_NAME="jammy-server-cloudimg-amd64.img"
 IMG_PATH="/var/lib/vz/template/iso/${IMG_NAME}"
 
