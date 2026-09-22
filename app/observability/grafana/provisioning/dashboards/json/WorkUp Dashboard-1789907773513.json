@@ -4,18 +4,24 @@
   "metadata": {
     "name": "workup-obs-sec",
     "namespace": "default",
-    "uid": "f591b8ea-4104-4bc1-a180-e14633a80dd7",
-    "resourceVersion": "1789907760279008",
-    "generation": 7,
-    "creationTimestamp": "2026-09-20T11:35:21Z",
+    "uid": "2918717f-356a-4529-b54c-833c5bf902e0",
+    "resourceVersion": "1790100692342010",
+    "generation": 4,
+    "creationTimestamp": "2026-09-22T17:16:01Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "2958898676035584"
+      "grafana.app/deprecatedInternalID": "3769409221730304"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:ffytilpm2sqo0f",
+      "grafana.app/createdBy": "access-policy:service",
+      "grafana.app/managedBy": "classic-file-provisioning",
+      "grafana.app/managerAllowsEdits": "true",
+      "grafana.app/managerId": "WorkUp",
       "grafana.app/saved-from-ui": "Grafana v13.2.2 (1bea008f7e)",
-      "grafana.app/updatedBy": "user:ffytilpm2sqo0f",
-      "grafana.app/updatedTimestamp": "2026-09-20T12:36:00Z"
+      "grafana.app/sourceChecksum": "691edfdb0af94a0cfdd6617b51209dbb",
+      "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/json/WorkUp Dashboard-1789907773513.json",
+      "grafana.app/sourceTimestamp": "1790097081000",
+      "grafana.app/updatedBy": "user:dfz1klhd3bta8f",
+      "grafana.app/updatedTimestamp": "2026-09-22T18:11:32Z"
     }
   },
   "spec": {
@@ -781,6 +787,71 @@
             }
           }
         }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9,
+          "title": "Aide logs (all hosts)",
+          "description": "",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "loki",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "loki"
+                      },
+                      "spec": {
+                        "direction": "backward",
+                        "editorMode": "code",
+                        "expr": "{job=\"aide-fim\"}",
+                        "queryType": "range"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "logs",
+            "version": "13.2.2",
+            "spec": {
+              "options": {
+                "dedupStrategy": "none",
+                "enableInfiniteScrolling": false,
+                "enableLogDetails": true,
+                "prettifyLogMessage": true,
+                "showControls": false,
+                "showFieldSelector": false,
+                "showLabels": true,
+                "showLevel": false,
+                "showTime": false,
+                "sortOrder": "Descending",
+                "timestampResolution": "ms",
+                "unwrappedColumns": false,
+                "wrapLogMessage": false
+              },
+              "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -791,7 +862,7 @@
             "kind": "RowsLayoutRow",
             "spec": {
               "title": "Overview",
-              "collapse": true,
+              "collapse": false,
               "layout": {
                 "kind": "GridLayout",
                 "spec": {
@@ -872,6 +943,19 @@
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-5"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 30,
+                        "width": 24,
+                        "height": 13,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
                         }
                       }
                     }

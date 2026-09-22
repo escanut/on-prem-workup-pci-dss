@@ -1,31 +1,44 @@
-database=file:/var/lib/aide/aide.db
+database_in=file:/var/lib/aide/aide.db
 database_out=file:/var/lib/aide/aide.db.new
 report_url=stdout
 
-# Rules
-R = p+sha256
-NORMAL = R
-L = p+u+g+sha256+acl+xattrs+selinux
+FULL   = p+i+n+u+g+s+b+m+c+sha256
+BINLIB = p+u+g+sha256
+CONFIG = p+u+g+n+sha256
+GROWLOG = p+u+g+n
 
-/boot   L
-/bin    L
-/sbin   L
-/lib    L
-/lib64  L
-/usr    L
-/etc    L
-/root   L
-/opt    L
-/var/spool/cron L
+/boot           BINLIB
+/bin            BINLIB
+/sbin           BINLIB
+/lib            BINLIB
+/lib64          BINLIB
+/usr/bin        BINLIB
+/usr/sbin       BINLIB
+/usr/lib        BINLIB
 
-# Noise reduction — skip volatile paths
+/etc            CONFIG
+/root           CONFIG
+/var/spool/cron CONFIG
+
+/opt            BINLIB
+
+/var/log/audit/ sha256
+
+!/etc/mtab
+!/etc/adjtime
+!/etc/resolv.conf
+!/etc/machine-id
+!/etc/.pwd.lock
+!/etc/shadow~
+!/var/spool/cron/crontabs/.*\.tmp
 !/proc
 !/sys
 !/dev
 !/run
 !/tmp
 !/var/tmp
-!/var/log
 !/var/cache
 !/var/lib/aide
-!/home/*/.cache
+!/var/lib/docker
+!/var/log
+!/home/.*/.cache

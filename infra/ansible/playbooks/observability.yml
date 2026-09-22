@@ -167,10 +167,9 @@
     ansible.builtin.command: augenrules --load
     changed_when: true
 
-  - name: Reinitialize AIDE database
-      command: aideinit -y -f
-
-  - name: Promote AIDE database
-    command: mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+  - name: Rebuild AIDE database
+    ansible.builtin.shell: |
+      aide --init --config=/etc/aide/aide.conf
+      mv -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db
     args:
-      removes: /var/lib/aide/aide.db.new
+      executable: /bin/bash

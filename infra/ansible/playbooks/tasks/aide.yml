@@ -1,57 +1,67 @@
 ---
+# AIDE — File Integrity Monitoring (PCI DSS 10.3.4 / 11.5.2)
+
 - name: Install AIDE
-  package:
+  ansible.builtin.package:
     name:
       - aide
-      - aide-common  
+      - aide-common
     state: present
 
+- name: Ensure AIDE log directory exists
+  ansible.builtin.file:
+    path: /var/log/aide
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+
 - name: Deploy AIDE configuration
-  template:
+  ansible.builtin.template:
     src: templates/aide.conf.j2
     dest: /etc/aide/aide.conf
     owner: root
     group: root
-    mode: '0644'
-  notify: Reinitialize AIDE database
+    mode: "0644"
+  notify: Rebuild AIDE database
 
-- name: Initialize AIDE database (first run only)
-  command: aideinit -y -f
+
+- name: Check if AIDE database already exists
+  ansible.builtin.stat:
+    path: /var/lib/aide/aide.db
+  register: aide_db_stat
+
+
+- name: Initialize AIDE database (first run only, single scan)
+  ansible.builtin.command: aideinit
   args:
-    creates: /var/lib/aide/aide.db.new   
-  notify: Promote AIDE database
+    creates: /var/lib/aide/aide.db
+  when: not aide_db_stat.stat.exists
 
-- name: Create AIDE log directory
-    file:
-      path: /var/log/aide
-      state: directory
-      owner: root
-      group: root
-      mode: '0750'
 
-- name: Install daily integrity check cron
-  cron:
-    name: "PCI DSS 11.5.1 — AIDE daily integrity check"
+- name: Install daily AIDE integrity check cron
+  ansible.builtin.cron:
+    name: "AIDE daily integrity check"
     minute: "17"
     hour: "3"
     user: root
-    job: "/usr/sbin/aide --check > /var/log/aide/aide-check-$(date +\\%Y\\%m\\%d).log 2>&1 || true"
+    job: "/usr/bin/aide --check > /var/log/aide/aide-check.log 2>&1 || true"
     state: present
 
-  
-- name: Configure logrotate for AIDE logs
-  copy:
+- name: Configure logrotate for AIDE reports
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/aide
+    owner: root
+    group: root
+    mode: "0644"
     content: |
       /var/log/aide/*.log {
-          daily
-          rotate 90
+          weekly
+          rotate 12
           compress
           delaycompress
           missingok
           notifempty
           create 0640 root root
+          copytruncate
       }
-    dest: /etc/logrotate.d/aide
-    owner: root
-    group: root
-    mode: '0644

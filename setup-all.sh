@@ -23,8 +23,7 @@ PROJECT_PATH=$HOME/on_prem_workup
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
 # BACKEND APP SETUP
-cd ${PROJECT_PATH}/app/backend
-# # go mod tidy -e -x -v
+# # # go mod tidy -e -x -v
 # docker compose down  -v
 # docker compose -f ${COMPOSE_FILE} up --build -d --remove-orphans
 
